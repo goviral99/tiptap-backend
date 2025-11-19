@@ -1,59 +1,37 @@
 const express = require("express");
 const cors = require("cors");
-
-// Check if API key exists
-if (!process.env.STRIPE_SECRET_KEY) {
-    console.error("ERROR: STRIPE_SECRET_KEY environment variable not set!");
-    process.exit(1);
-}
-
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")(process.env.STRIPE_SECRET || "sk_test_51P0AZgDwveEOLLlhfhGeLerlJHDcl6vh9sQe7srsCzDyWty3OGG4aJ1Mf7QyyoBdAMlg89SmA1UlA9gd3fcFWwZ2006vX3G7h8");  // fallback if needed
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. Stripe Terminal Connection Token
-app.post("/connection_token", async (req, res) => {
-    try {
-        const token = await stripe.terminal.connectionTokens.create();
-        res.json({ secret: token.secret });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+// Test route
+app.get("/", (req, res) => {
+    res.send("Backend running OK");
 });
 
-// 2. Create Payment Intent
+// Create payment intent (Terminal / Tap to Pay)
 app.post("/create_payment_intent", async (req, res) => {
     try {
-        const { amount } = req.body;
+        const { amount, currency } = req.body;
 
-        const pi = await stripe.paymentIntents.create({
-            amount,
-            currency: "cad",
-            payment_method_types: ["card_present", "interac_present"],
-            capture_method: "manual"
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount,
+            currency: currency || "cad",
+            automatic_payment_methods: { enabled: true }
         });
 
-        res.json({
-            id: pi.id,
-            client_secret: pi.client_secret
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.json({ clientSecret: paymentIntent.client_secret });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.message });
     }
 });
 
-// 3. Capture Payment Intent
-app.post("/capture_payment_intent", async (req, res) => {
-    try {
-        const { id } = req.body;
-        const captured = await stripe.paymentIntents.capture(id);
-        res.json(captured);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+// IMPORTANT: Render needs the dynamic port
+const port = process.env.PORT || 10000;
+app.listen(port, () => {
+    console.log("Server running on port " + port);
 });
-
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Backend running on port " + PORT));
