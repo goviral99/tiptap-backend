@@ -1,12 +1,14 @@
 const express = require("express");
 const cors = require("cors");
+
+// Use Environment Variable
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. Create connection token
+// 1. Stripe Terminal Connection Token
 app.post("/connection_token", async (req, res) => {
     try {
         const token = await stripe.terminal.connectionTokens.create();
@@ -16,7 +18,7 @@ app.post("/connection_token", async (req, res) => {
     }
 });
 
-// 2. Create payment intent
+// 2. Create Payment Intent
 app.post("/create_payment_intent", async (req, res) => {
     try {
         const { amount } = req.body;
@@ -24,8 +26,8 @@ app.post("/create_payment_intent", async (req, res) => {
         const pi = await stripe.paymentIntents.create({
             amount,
             currency: "cad",
-            capture_method: "manual",
-            payment_method_types: ["card_present", "interac_present"]
+            payment_method_types: ["card_present", "interac_present"],
+            capture_method: "manual"
         });
 
         res.json({
@@ -37,7 +39,7 @@ app.post("/create_payment_intent", async (req, res) => {
     }
 });
 
-// 3. Capture payment intent
+// 3. Capture Payment Intent
 app.post("/capture_payment_intent", async (req, res) => {
     try {
         const { id } = req.body;
@@ -48,6 +50,5 @@ app.post("/capture_payment_intent", async (req, res) => {
     }
 });
 
-app.listen(10000, () => {
-    console.log("Backend running on port 10000");
-});
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log("Backend running on port " + PORT));
