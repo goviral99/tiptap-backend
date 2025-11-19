@@ -20,17 +20,19 @@ app.post("/create_payment_intent", async (req, res) => {
 
         console.log("REQUEST BODY:", req.body);
 
-        if (!amount) {
-            return res.status(400).json({ error: "Missing amount" });
-        }
-
         const paymentIntent = await stripe.paymentIntents.create({
             amount: amount,
             currency: currency || "cad",
-            automatic_payment_methods: { enabled: true }
+            automatic_payment_methods: {
+                enabled: true
+            }
         });
 
-        console.log("PAYMENT INTENT CREATED:", paymentIntent);
+        console.log("RAW PAYMENT INTENT:", JSON.stringify(paymentIntent, null, 2));
+
+        if (!paymentIntent.client_secret) {
+            console.log("⚠️ NO CLIENT SECRET RETURNED FROM STRIPE");
+        }
 
         res.json({ clientSecret: paymentIntent.client_secret });
 
