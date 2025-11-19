@@ -8,10 +8,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Test route
+// Test rout
 app.get("/", (req, res) => {
     res.send("Backend running OK");
 });
+
+app.post("/debug", (req, res) => {
+    console.log("DEBUG BODY:", req.body);
+    res.json(req.body);
+});
+
 
 // Create Payment Intent
 app.post("/create_payment_intent", async (req, res) => {
