@@ -1,12 +1,12 @@
 const express = require("express");
 const cors = require("cors");
-const stripe = require("stripe")("sk_test_51P0AZgDwveEOLLlhfhGeLerlJHDcl6vh9sQe7srsCzDyWty3OGG4aJ1Mf7QyyoBdAMlg89SmA1UlA9gd3fcFWwZ2006vX3G7h8");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. Stripe Terminal Connection Token
+// 1. Create connection token
 app.post("/connection_token", async (req, res) => {
     try {
         const token = await stripe.terminal.connectionTokens.create();
@@ -16,7 +16,7 @@ app.post("/connection_token", async (req, res) => {
     }
 });
 
-// 2. Create Payment Intent
+// 2. Create payment intent
 app.post("/create_payment_intent", async (req, res) => {
     try {
         const { amount } = req.body;
@@ -24,8 +24,8 @@ app.post("/create_payment_intent", async (req, res) => {
         const pi = await stripe.paymentIntents.create({
             amount,
             currency: "cad",
-            payment_method_types: ["card_present", "interac_present"],
-            capture_method: "manual"
+            capture_method: "manual",
+            payment_method_types: ["card_present", "interac_present"]
         });
 
         res.json({
@@ -37,7 +37,7 @@ app.post("/create_payment_intent", async (req, res) => {
     }
 });
 
-// 3. Capture Payment Intent
+// 3. Capture payment intent
 app.post("/capture_payment_intent", async (req, res) => {
     try {
         const { id } = req.body;
@@ -48,4 +48,6 @@ app.post("/capture_payment_intent", async (req, res) => {
     }
 });
 
-app.listen(10000, () => console.log("Backend running on port 10000"));
+app.listen(10000, () => {
+    console.log("Backend running on port 10000");
+});
