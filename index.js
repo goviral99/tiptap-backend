@@ -8,17 +8,29 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Test rout
+// Test route
 app.get("/", (req, res) => {
     res.send("Backend running OK");
 });
 
+// Debug route
 app.post("/debug", (req, res) => {
     console.log("DEBUG BODY:", req.body);
     res.json(req.body);
 });
 
+// ⭐ REQUIRED FOR STRIPE TERMINAL ⭐
+app.post("/connection_token", async (req, res) => {
+    try {
+        const token = await stripe.terminal.connectionTokens.create();
+        res.json({ secret: token.secret });
+    } catch (err) {
+        console.error("CONNECTION TOKEN ERROR:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
+// Create Payment Intent
 app.post("/create_payment_intent", async (req, res) => {
     try {
         const { amount, currency } = req.body;
@@ -33,7 +45,7 @@ app.post("/create_payment_intent", async (req, res) => {
 
         console.log("RAW PAYMENT INTENT:", JSON.stringify(paymentIntent, null, 2));
 
-        // FIX: return the correct key for Android
+        // FIX: return correct key for Android
         res.json({ client_secret: paymentIntent.client_secret });
 
     } catch (error) {
@@ -42,7 +54,7 @@ app.post("/create_payment_intent", async (req, res) => {
     }
 });
 
-// Dynamic port for Render
+// Render dynamic port
 const port = process.env.PORT || 10000;
 app.listen(port, () => {
     console.log("Server running on port " + port);
