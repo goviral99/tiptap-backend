@@ -1,7 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 
-// Use Environment Variable
+// Check if API key exists
+if (!process.env.STRIPE_SECRET_KEY) {
+    console.error("ERROR: STRIPE_SECRET_KEY environment variable not set!");
+    process.exit(1);
+}
+
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
@@ -52,4 +57,3 @@ app.post("/capture_payment_intent", async (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log("Backend running on port " + PORT));
-
