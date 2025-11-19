@@ -52,3 +52,4 @@ app.post("/capture_payment_intent", async (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log("Backend running on port " + PORT));
+
