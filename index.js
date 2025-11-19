@@ -19,7 +19,6 @@ app.post("/debug", (req, res) => {
 });
 
 
-// Create Payment Intent
 app.post("/create_payment_intent", async (req, res) => {
     try {
         const { amount, currency } = req.body;
@@ -29,18 +28,13 @@ app.post("/create_payment_intent", async (req, res) => {
         const paymentIntent = await stripe.paymentIntents.create({
             amount: amount,
             currency: currency || "cad",
-            automatic_payment_methods: {
-                enabled: true
-            }
+            automatic_payment_methods: { enabled: true }
         });
 
         console.log("RAW PAYMENT INTENT:", JSON.stringify(paymentIntent, null, 2));
 
-        if (!paymentIntent.client_secret) {
-            console.log("⚠️ NO CLIENT SECRET RETURNED FROM STRIPE");
-        }
-
-        res.json({ clientSecret: paymentIntent.client_secret });
+        // FIX: return the correct key for Android
+        res.json({ client_secret: paymentIntent.client_secret });
 
     } catch (error) {
         console.error("STRIPE ERROR:", error);
