@@ -1,54 +1,59 @@
 const express = require("express");
 const cors = require("cors");
-const stripe = require("stripe")("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"); // <- your LIVE SECRET KEY
+
+// ⚠️ Use your LIVE secret key here
+const stripe = require("stripe")("sk_live_XXXXXXX");
 
 const app = express();
+
+// Support CORS + JSON + Form Data
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Your Terminal Location
+// Your Tap-to-Pay / Terminal Location
 const TERMINAL_LOCATION = "tml_GRmdEgU8lzCl89";
 
-// --------------------------
-// Test route
-// --------------------------
+// --------------------------------------------------
+// Health Check
+// --------------------------------------------------
 app.get("/", (req, res) => {
-  res.send("Backend OK – Tap to Pay Enabled");
+  res.send("Backend OK – Tap to Pay Android Enabled");
 });
 
-// --------------------------
-// Terminal: Connection Token
-// --------------------------
+// --------------------------------------------------
+// Create Connection Token (TTP + Readers)
+// --------------------------------------------------
 app.post("/connection_token", async (req, res) => {
   try {
     const token = await stripe.terminal.connectionTokens.create();
-    res.json({ secret: token.secret });
-  } catch (err) {
-    console.error("CONNECTION TOKEN ERROR:", err);
-    res.status(500).json({ error: err.message });
+    return res.json({ secret: token.secret });
+  } catch (error) {
+    console.error("CONNECTION TOKEN ERROR:", error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
-// --------------------------
-// Terminal: Create PaymentIntent
-// --------------------------
+// --------------------------------------------------
+// Create PaymentIntent (Tap-to-Pay Android)
+// --------------------------------------------------
 app.post("/create_payment_intent", async (req, res) => {
   try {
-    let { amount, currency } = req.body;
-
     console.log("RAW BODY:", req.body);
 
+    let { amount, currency } = req.body;
+
     if (!amount) {
-      return res.status(400).json({ error: "Missing amount" });
+      return res.status(400).json({ error: "Missing required parameter: amount" });
     }
 
-    // Convert to integer cents
+    // Convert amounts to integer cents
     amount = parseInt(amount);
     if (isNaN(amount)) {
       return res.status(400).json({ error: "Invalid amount" });
     }
 
-    // REQUIRED FOR TAP-TO-PAY AND CARD_PRESENT
+    // ⭐ REQUIRED FOR TAP-TO-PAY AND STRIPE TERMINAL
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
       currency: currency || "cad",
@@ -60,51 +65,53 @@ app.post("/create_payment_intent", async (req, res) => {
           request_incremental_authorization_support: false
         }
       },
-      // REQUIRED FOR TTP
+      // ⭐ REQUIRED FOR TAP-TO-PAY
       location: TERMINAL_LOCATION
     });
 
-    console.log("Created PI:", paymentIntent.id);
+    console.log("Created PaymentIntent:", paymentIntent.id);
 
-    // The Android SDK expects the **full PaymentIntent object**
-    res.json(paymentIntent);
+    // Return full PaymentIntent for Android SDK
+    return res.json(paymentIntent);
 
   } catch (error) {
-    console.error("PI ERROR:", error);
-    res.status(500).json({ error: error.message });
+    console.error("PAYMENT INTENT ERROR:", error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
-// --------------------------
-// Terminal: Capture
-// --------------------------
+// --------------------------------------------------
+// Capture PaymentIntent
+// --------------------------------------------------
 app.post("/capture_payment_intent", async (req, res) => {
   try {
     const { id } = req.body;
     const intent = await stripe.paymentIntents.capture(id);
-    res.json(intent);
-  } catch (err) {
-    console.error("CAPTURE ERROR:", err);
-    res.status(500).json({ error: err.message });
+    return res.json(intent);
+  } catch (error) {
+    console.error("CAPTURE ERROR:", error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
-// --------------------------
-// Terminal: Cancel
-// --------------------------
+// --------------------------------------------------
+// Cancel PaymentIntent
+// --------------------------------------------------
 app.post("/cancel_payment_intent", async (req, res) => {
   try {
     const { id } = req.body;
     const intent = await stripe.paymentIntents.cancel(id);
-    res.json(intent);
-  } catch (err) {
-    console.error("CANCEL ERROR:", err);
-    res.status(500).json({ error: err.message });
+    return res.json(intent);
+  } catch (error) {
+    console.error("CANCEL ERROR:", error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
-// --------------------------
+// --------------------------------------------------
 // Start server
-// --------------------------
+// --------------------------------------------------
 const port = process.env.PORT || 10000;
-app.listen(port, () => console.log("Server running on port", port));
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
