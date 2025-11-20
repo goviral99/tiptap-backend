@@ -53,10 +53,16 @@ app.post("/create_payment_intent", async (req, res) => {
       return res.status(400).json({ error: "Invalid amount" });
     }
     
+    // ⭐ FORCE CAD FOR CANADIAN CARD_PRESENT PAYMENTS
+    // In Canada, card_present only supports CAD
+    if (currency && currency.toLowerCase() !== 'cad') {
+      console.warn(`Currency ${currency} requested but not supported for card_present in CA. Using CAD instead.`);
+    }
+    
     // ⭐ CREATE PAYMENT INTENT FOR TAP-TO-PAY
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
-      currency: currency || "cad",
+      currency: "cad", // ⭐ MUST BE CAD IN CANADA
       payment_method_types: ["card_present"],
       capture_method: "automatic",
       payment_method_options: {
@@ -68,7 +74,8 @@ app.post("/create_payment_intent", async (req, res) => {
       // Optional: Store location in metadata for tracking
       metadata: {
         terminal_location: TERMINAL_LOCATION,
-        source: "tap_to_pay_android"
+        source: "tap_to_pay_android",
+        original_currency_requested: currency || "cad"
       }
     });
     
@@ -164,4 +171,5 @@ app.listen(port, () => {
   console.log(`Server running on port ${port}`);
   console.log(`Terminal Location: ${TERMINAL_LOCATION}`);
   console.log(`Environment: ${STRIPE_SECRET_KEY.startsWith('sk_live') ? 'LIVE' : 'TEST'}`);
+  console.log(`Supported Currency: CAD (Canadian Dollars only for card_present in Canada)`);
 });
