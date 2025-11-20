@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Your Tap-to-Pay / Terminal Location
-const TERMINAL_LOCATION = "tml_GRmdEgU8lzCl89";
+const TERMINAL_LOCATION = "tml_GRw4dQPB9w96B1";
 
 // --------------------------------------------------
 // Health Check
