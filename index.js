@@ -2,7 +2,8 @@ const express = require("express");
 const cors = require("cors");
 
 // ⚠️ Use your LIVE secret key here
-const stripe = require("stripe")("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");
+const STRIPE_SECRET_KEY = "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";
+const stripe = require("stripe")(STRIPE_SECRET_KEY);
 
 const app = express();
 
@@ -162,5 +163,5 @@ const port = process.env.PORT || 10000;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
   console.log(`Terminal Location: ${TERMINAL_LOCATION}`);
-  console.log(`Environment: ${stripe.key.startsWith('sk_live') ? 'LIVE' : 'TEST'}`);
+  console.log(`Environment: ${STRIPE_SECRET_KEY.startsWith('sk_live') ? 'LIVE' : 'TEST'}`);
 });
