@@ -5,7 +5,7 @@ const stripe = require("stripe")(
   "sk_test_51P0AZgDwveEOLLlhfhGeLerlJHDcl6vh9sQe7srsCzDyWty3OGG4aJ1Mf7QyyoBdAMlg89SmA1UlA9gd3fcFWwZ2006vX3G7h8"
 );
 
-const app = express();                      // ⭐ THIS MUST BE AT THE TOP ⭐
+const app = express();                 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -50,14 +50,12 @@ app.post("/create_payment_intent", async (req, res) => {
       });
     }
 
-    // Convert amount to cents
     if (typeof amount === "string") {
       amount = amount.replace("$", "").trim();
       amount = Math.round(parseFloat(amount) * 100);
     }
 
     amount = parseInt(amount);
-
     console.log("AMOUNT IN CENTS:", amount);
 
     const paymentIntent = await stripe.paymentIntents.create({
@@ -68,7 +66,6 @@ app.post("/create_payment_intent", async (req, res) => {
 
     console.log("PAYMENT INTENT CREATED:", paymentIntent.id);
 
-    // ⭐ RETURN ONLY WHAT THE ANDROID APP EXPECTS
     res.json({
       id: paymentIntent.id,
       client_secret: paymentIntent.client_secret,
@@ -83,4 +80,7 @@ app.post("/create_payment_intent", async (req, res) => {
 // ------------------------
 // START SERVER
 // ------------------------
-const port = process
+const port = process.env.PORT || 10000;
+app.listen(port, () => {
+  console.log("Server running on port " + port);
+});
