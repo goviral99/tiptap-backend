@@ -5,14 +5,14 @@ const stripe = require("stripe")(
   "sk_test_51P0AZgDwveEOLLlhfhGeLerlJHDcl6vh9sQe7srsCzDyWty3OGG4aJ1Mf7QyyoBdAMlg89SmA1UlA9gd3fcFWwZ2006vX3G7h8"
 );
 
-const app = express();                 
+const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));   // 👈 required for Android form-urlencoded
 
-// ------------------------
+// ---------------------------------------------------
 // TEST ROUTES
-// ------------------------
+// ---------------------------------------------------
 app.get("/", (req, res) => {
   res.send("Backend running OK");
 });
@@ -22,9 +22,9 @@ app.post("/debug", (req, res) => {
   res.json(req.body);
 });
 
-// ------------------------
+// ---------------------------------------------------
 // STRIPE TERMINAL: Connection Token
-// ------------------------
+// ---------------------------------------------------
 app.post("/connection_token", async (req, res) => {
   try {
     const token = await stripe.terminal.connectionTokens.create();
@@ -35,9 +35,10 @@ app.post("/connection_token", async (req, res) => {
   }
 });
 
-// ------------------------
-// STRIPE TERMINAL: Create PaymentIntent
-// ------------------------
+// ---------------------------------------------------
+// STRIPE TERMINAL: Create Payment Intent
+// (Configured EXACTLY as Stripe Tap-to-Pay Android expects)
+// ---------------------------------------------------
 app.post("/create_payment_intent", async (req, res) => {
   try {
     let { amount, currency } = req.body;
@@ -50,6 +51,7 @@ app.post("/create_payment_intent", async (req, res) => {
       });
     }
 
+    // Convert amount into integer cents
     if (typeof amount === "string") {
       amount = amount.replace("$", "").trim();
       amount = Math.round(parseFloat(amount) * 100);
@@ -66,9 +68,9 @@ app.post("/create_payment_intent", async (req, res) => {
 
     console.log("PAYMENT INTENT CREATED:", paymentIntent.id);
 
+    // ⭐ EXACT FORMAT the Android sample expects — prevents crashes ⭐
     res.json({
-      id: paymentIntent.id,
-      client_secret: paymentIntent.client_secret,
+      client_secret: paymentIntent.client_secret
     });
 
   } catch (error) {
@@ -77,9 +79,9 @@ app.post("/create_payment_intent", async (req, res) => {
   }
 });
 
-// ------------------------
-// START SERVER
-// ------------------------
+// ---------------------------------------------------
+// START SERVER (Render compatible)
+// ---------------------------------------------------
 const port = process.env.PORT || 10000;
 app.listen(port, () => {
   console.log("Server running on port " + port);
