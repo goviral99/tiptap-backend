@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 
-// ⚠️ Hardcoded (NOT SAFE) — replace YOUR_KEY_HERE with your real secret key.
 const stripe = require("stripe")("sk_test_51P0AZgDwveEOLLlhfhGeLerlJHDcl6vh9sQe7srsCzDyWty3OGG4aJ1Mf7QyyoBdAMlg89SmA1UlA9gd3fcFWwZ2006vX3G7h8");
 
 const app = express();
@@ -30,26 +29,41 @@ app.post("/connection_token", async (req, res) => {
     }
 });
 
-// Create Payment Intent
+// ⭐ FIXED: Create Payment Intent with proper amount parsing ⭐
 app.post("/create_payment_intent", async (req, res) => {
     try {
-        const { amount, currency } = req.body;
+        let { amount, currency } = req.body;
 
-        console.log("REQUEST BODY:", req.body);
+        console.log("REQUEST BODY RAW:", req.body);
+
+        // Validate
+        if (!amount) {
+            return res.status(400).json({ error: "Missing required parameter: amount" });
+        }
+
+        // Convert amount into integer cents
+        if (typeof amount === "string") {
+            amount = amount.replace("$", "").trim();
+            amount = Math.round(parseFloat(amount) * 100);
+        }
+
+        amount = parseInt(amount);
+
+        console.log("AMOUNT IN CENTS:", amount);
 
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount,
+            amount,
             currency: currency || "cad",
             automatic_payment_methods: { enabled: true }
         });
 
-        console.log("RAW PAYMENT INTENT:", JSON.stringify(paymentIntent, null, 2));
+        console.log("PAYMENT INTENT CREATED:", paymentIntent.id);
 
-        // FIX: return correct key for Android
-        res.json({ client_secret: paymentIntent.client_secret });
+        // FIX: return full paymentIntent for Stripe Terminal
+        res.json(paymentIntent);
 
     } catch (error) {
-        console.error("STRIPE ERROR:", error);
+        console.error("STRIPE PI ERROR:", error);
         res.status(500).json({ error: error.message });
     }
 });
