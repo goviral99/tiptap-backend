@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 
 // ⚠️ Use your LIVE secret key here
-const stripe = require("stripe")("sk_live_XXXXXXX");
+const stripe = require("stripe")("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");
 
 const app = express();
 
